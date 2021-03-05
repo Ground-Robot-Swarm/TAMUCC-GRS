@@ -40,7 +40,7 @@
 #include "MapData.h"
 
 #include <cv_bridge/cv_bridge.h>
-#include <opencv/cv.h>
+#include <opencv2/core/core_c.h>
 
 using namespace std;
 

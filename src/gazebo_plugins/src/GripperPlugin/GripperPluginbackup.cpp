@@ -28,8 +28,8 @@ using namespace std;
 void GripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
   model = _model;
   sdf = _sdf;
-  previousUpdateTime = model->GetWorld()->SimTime();
-  previousDebugUpdateTime = model->GetWorld()->SimTime();
+  previousUpdateTime = model->GetWorld()->GetSimTime();
+  previousDebugUpdateTime = model->GetWorld()->GetSimTime();
 
   attachedTargetModel = NULL;
   dropStaticTarget = false;
@@ -45,7 +45,7 @@ void GripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
   contactThreshold = common::Time(0.0001);
   noContactThreshold = common::Time(0.1);
   fingerNoContactThreshold = common::Time(0.1);
-  prevHandleGraspingTime = model->GetWorld()->SimTime();
+  prevHandleGraspingTime = model->GetWorld()->GetSimTime();
     
   // Create a ros node
   rosNode.reset(new ros::NodeHandle(string(model->GetName()) + "_gripper"));
@@ -177,7 +177,7 @@ void GripperPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
  * gripper publishers.
  */
 void GripperPlugin::updateWorldEventHandler() {
-  common::Time currentTime = model->GetWorld()->SimTime();
+  common::Time currentTime = model->GetWorld()->GetSimTime();
 
   // only update the gripper plugin once every updatePeriodInSeconds
   if((currentTime - previousUpdateTime).Float() < updatePeriodInSeconds) {
@@ -196,17 +196,17 @@ void GripperPlugin::updateWorldEventHandler() {
   GripperManager::GripperState desiredState;
 
   // get the current gripper state
-  currentState.wristAngle = wristJoint->Position(0);
-  currentState.leftFingerAngle = leftFingerJoint->Position(0);
-  currentState.rightFingerAngle = rightFingerJoint->Position(0);
+  currentState.wristAngle = wristJoint->GetAngle(0).Radian();
+  currentState.leftFingerAngle = leftFingerJoint->GetAngle(0).Radian();
+  currentState.rightFingerAngle = rightFingerJoint->GetAngle(0).Radian();
 
   // get the total angle of both fingers:
   // => right finger joint angle is always negative
   // => left finger joint angle is always positive
   // total finger angle = left finger joint angle - (-right finger joint angle)
   // total finger angle is ALWAYS POSITIVE (or zero)
-  float leftFingerAngle = leftFingerJoint->Position(0);
-  float rightFingerAngle = rightFingerJoint->Position(0);
+  float leftFingerAngle = leftFingerJoint->GetAngle(0).Radian();
+  float rightFingerAngle = rightFingerJoint->GetAngle(0).Radian();
 
   // Set the desired gripper state
   desiredState.leftFingerAngle = desiredFingerAngle.Radian() / 2.0;
@@ -486,34 +486,34 @@ PIDController::PIDSettings GripperPlugin::loadPIDSettings(string PIDTag) {
   }
 
   PIDController::PIDSettings settings;
-  ignition::math::Vector3d pid;
-  ignition::math::Vector2d forceLimits;
+  math::Vector3 pid;
+  math::Vector2d forceLimits;
 
   if(!sdf->HasElement(PIDTag + "PID")) {
     ROS_INFO_STREAM("[Gripper Plugin : " << model->GetName()
       << "]: In GripperPlugin.cpp: loadPIDSettings(): missing <" << PIDTag
       << "PID> tag, defaulting to P=2.5, I=0.0, D=0.0");
-    pid = ignition::math::Vector3d(2.5, 0.0, 0.0);
+    pid = math::Vector3(2.5, 0.0, 0.0);
   } else {
-    pid = sdf->GetElement(PIDTag + "PID")->Get<ignition::math::Vector3d>();
+    pid = sdf->GetElement(PIDTag + "PID")->Get<math::Vector3>();
   }
 
   if(!sdf->HasElement(PIDTag + "ForceLimits")) {
     ROS_INFO_STREAM("[Gripper Plugin : " << model->GetName()
       << "]: In GripperPlugin.cpp: loadPIDSettings(): missing <" << PIDTag
       << "ForceLimits> tag, defaulting to MIN = -10.0 N, MAX = 10.0 N");
-    forceLimits = ignition::math::Vector2d(-10.0, 10.0);
+    forceLimits = math::Vector2d(-10.0, 10.0);
   } else {
     forceLimits =
-      sdf->GetElement(PIDTag + "ForceLimits")->Get<ignition::math::Vector2d>();
+      sdf->GetElement(PIDTag + "ForceLimits")->Get<math::Vector2d>();
   }
 
-  settings.Kp  = (float)pid.X();
-  settings.Ki  = (float)pid.Y();
-  settings.Kd  = (float)pid.Z();
+  settings.Kp  = (float)pid.x;
+  settings.Ki  = (float)pid.y;
+  settings.Kd  = (float)pid.z;
   settings.dt  = updatePeriodInSeconds;
-  settings.min = (float)forceLimits.X();
-  settings.max = (float)forceLimits.Y();
+  settings.min = (float)forceLimits.x;
+  settings.max = (float)forceLimits.y;
 
   return settings;
 }
@@ -527,7 +527,7 @@ void GripperPlugin::handleGrasping() {
   // Get the amount of time that elapsed between this call and the
   // last time we were called. This is used for the contact and no contact
   // time calculations
-  common::Time currentTime = model->GetWorld()->SimTime();
+  common::Time currentTime = model->GetWorld()->GetSimTime();
   common::Time deltaTime = (currentTime - prevHandleGraspingTime);
   prevHandleGraspingTime = currentTime;
   
@@ -617,19 +617,19 @@ void GripperPlugin::attach() {
   {
   
     // Create a new joint with which to connect the target and gripper
-    targetAttachJoint = model->GetWorld()->Physics()->CreateJoint("revolute");
+    targetAttachJoint = model->GetWorld()->GetPhysicsEngine()->CreateJoint("revolute");
     targetAttachJoint->SetName(model->GetName()+"_gripper_attach_joint");
-    targetAttachJoint->Load(rightFingerTargetLink, gripperAttachLink, ignition::math::Pose3d(rightFingerTargetLink->WorldPose().Pos(), ignition::math::Quaterniond()));
+    targetAttachJoint->Load(rightFingerTargetLink, gripperAttachLink, math::Pose(rightFingerTargetLink->GetWorldPose().pos, math::Quaternion()));
     targetAttachJoint->Attach(gripperAttachLink, rightFingerTargetLink);
     
     // set the axis of revolution
-    ignition::math::Vector3d axis(0,0,1);
+    math::Vector3 axis(0,0,1);
     targetAttachJoint->SetAxis(0, axis);
   
   // Initialize the joint so it doesn't move too much
   // The dynamics of the target grip can be controlled here
   double cfm, erp; // Constrained force mixing and Error Reduction parameter
-  double dt = model->GetWorld()->Physics()->GetMaxStepSize();
+  double dt = model->GetWorld()->GetPhysicsEngine()->GetMaxStepSize();
   if (dt < 1e-6) dt = 1e-6;
   double stiffness = 20000.0f;
   double damping = 100.0f;
@@ -639,8 +639,8 @@ void GripperPlugin::attach() {
   targetAttachJoint->SetParam("cfm", 0, cfm);
   targetAttachJoint->SetParam("stop_erp", 0, erp);
   targetAttachJoint->SetParam("stop_cfm", 0, cfm);
-  targetAttachJoint->SetUpperLimit(0, 0.0);
-  targetAttachJoint->SetLowerLimit(0, 0.0);
+  targetAttachJoint->SetHighStop(0, 0.0);
+  targetAttachJoint->SetLowStop(0, 0.0);
 
   } else { // The target model we are trying to grasp is static.
 
@@ -649,7 +649,7 @@ void GripperPlugin::attach() {
       throw runtime_error(errorMsg);
      }
 
-    attachedTargetOffset = targetModel->WorldPose() - gripperAttachLink->WorldPose();
+    attachedTargetOffset = targetModel->GetWorldPose() - gripperAttachLink->GetWorldPose();
     
     attachedTargetModel = targetModel;
   }
@@ -690,7 +690,7 @@ void GripperPlugin::detach() {
   if (!attachedTargetModel->IsStatic()) {
 
     stringstream poseStream;
-    poseStream << attachedTargetModel->WorldPose();
+    poseStream << attachedTargetModel->GetWorldPose();
     sendInfoLogMessage("Gripper detached from "
                        + (attachedTargetModel->IsStatic()? string("static"): string("dynamic"))
                        + " model "
@@ -737,12 +737,12 @@ void GripperPlugin::rightFingerContactEventHandler(ConstContactsPtr& msg){
       physics::ModelPtr modelInCollision;
       
       if (collision1ModelName.substr(0,2).compare("at")==0) {
-        modelInCollision = model->GetWorld()->ModelByName(collision1ModelName);
+        modelInCollision = model->GetWorld()->GetModel(collision1ModelName);
         rightFingerTargetLink = modelInCollision->GetLink("link");
 	rightFingerNoContactTime = 0.0f;
         return;
       } else if (collision2ModelName.substr(0,2).compare("at")==0) {
-        modelInCollision = model->GetWorld()->ModelByName(collision2ModelName);
+        modelInCollision = model->GetWorld()->GetModel(collision2ModelName);
         rightFingerTargetLink = modelInCollision->GetLink("link");
 	rightFingerNoContactTime = 0.0f;
         return;
@@ -768,12 +768,12 @@ void GripperPlugin::leftFingerContactEventHandler(ConstContactsPtr& msg){
       string collision2ModelName = name2.substr(0, name2.find("::"));
       
       if (collision1ModelName.substr(0,2).compare("at")==0) {
-        modelInCollision = model->GetWorld()->ModelByName(collision1ModelName);
+        modelInCollision = model->GetWorld()->GetModel(collision1ModelName);
         leftFingerTargetLink = modelInCollision->GetLink("link");
 	leftFingerNoContactTime = 0.0f;
         return;
       } else if (collision2ModelName.substr(0,2).compare("at")==0) {
-        modelInCollision = model->GetWorld()->ModelByName(collision2ModelName);
+        modelInCollision = model->GetWorld()->GetModel(collision2ModelName);
         leftFingerTargetLink = modelInCollision->GetLink("link");
 	leftFingerNoContactTime = 0.0f;
         return;
@@ -809,15 +809,15 @@ void GripperPlugin::updateGraspedStaticTargetPose() {
     // This isn't needed for non-static grasped targets
     if (!attachedTargetModel->IsStatic()) return; 
     
-    attachedTargetModel->SetWorldPose(attachedTargetOffset+gripperAttachLink->WorldPose());
+    attachedTargetModel->SetWorldPose(attachedTargetOffset+gripperAttachLink->GetWorldPose());
 
     if (dropStaticTarget) {
-      ignition::math::Pose3d p = attachedTargetModel->WorldPose();
+      math::Pose p = attachedTargetModel->GetWorldPose();
       
       // Modify the position of the target so that its center is half the target height
       // above the ground. This should make the bottom flush with the ground.
       // Gazebo provides a convenient helper function for this.
-      p.Rot() = ignition::math::Quaterniond(1,0,0,0);
+      p.rot = math::Quaternion(1,0,0,0);
       attachedTargetModel->SetWorldPose(p,true);
       attachedTargetModel->PlaceOnNearestEntityBelow();
             

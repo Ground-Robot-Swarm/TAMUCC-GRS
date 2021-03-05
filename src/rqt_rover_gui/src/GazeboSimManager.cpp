@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <utility> // For pair
-
+#include <cmath>
 using namespace std;
 
 GazeboSimManager::GazeboSimManager()

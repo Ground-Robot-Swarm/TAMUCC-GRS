@@ -20,7 +20,6 @@
 #include "gazebo/physics/physics.hh"
 #include "gazebo/common/common.hh"
 #include "gazebo/gazebo.hh"
-
 #include <rqt_gui_cpp/plugin.h>
 #include <ui_rover_gui_plugin.h>
 //#include <rqt_rover_gui/ui_rover_gui_plugin.h>
@@ -85,7 +84,7 @@ namespace rqt_rover_gui {
 
   class RoverGUIPlugin : public rqt_gui_cpp::Plugin
   {
-    Q_OBJECT
+   Q_OBJECT
       
   public:
 

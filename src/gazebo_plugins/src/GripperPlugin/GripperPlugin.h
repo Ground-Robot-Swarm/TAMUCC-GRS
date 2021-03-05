@@ -95,8 +95,8 @@ namespace gazebo {
       physics::JointPtr wristJoint;
       physics::JointPtr leftFingerJoint;
       physics::JointPtr rightFingerJoint;
-      math::Angle desiredWristAngle;
-      math::Angle desiredFingerAngle;
+      ignition::math::Angle desiredWristAngle;
+      ignition::math::Angle desiredFingerAngle;
 
       // gripper grasping objects
       physics::Model_V modelList;
@@ -146,7 +146,7 @@ namespace gazebo {
       physics::ModelPtr attachedTargetModel;
 
       // A pose offset so we can move grasped static objects around
-      math::Pose attachedTargetOffset;
+      ignition::math::Pose3d attachedTargetOffset;
       
       // These pointers are only when a finger is in contact with a target
       // object
@@ -166,7 +166,7 @@ namespace gazebo {
       std::mutex attaching_mutex;
 
       bool dropStaticTarget;
-      gazebo::math::Angle maxGrippingAngle;
+      ignition::math::Angle maxGrippingAngle;
 
       int  dropStaticTargetCounter;
   };

@@ -12,7 +12,7 @@ void ScorePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
     sdf = _sdf;
 
     // set the update period (number of updates per second) for this plugin
-    previousUpdateTime = model->GetWorld()->GetSimTime();
+    previousUpdateTime = model->GetWorld()->SimTime();
     loadUpdatePeriod();
     loadCollectionZoneSquareSize();
 
@@ -33,7 +33,7 @@ void ScorePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
 
 // Gazebo actuation function
 void ScorePlugin::updateWorldEventHandler() {
-    common::Time currentTime = model->GetWorld()->GetSimTime();
+    common::Time currentTime = model->GetWorld()->SimTime();
 
     if((currentTime - previousUpdateTime).Float() < updatePeriodInSeconds) {
         return;
@@ -51,24 +51,24 @@ void ScorePlugin::updateWorldEventHandler() {
  * Updates the score based on the proximity of tag models in the tagModels list.
  */
 void ScorePlugin::updateScore() {
-    if(modelList.size() == 0 || modelList.size() != model->GetWorld()->GetModels().size()) {
-        modelList = model->GetWorld()->GetModels();
+    if(modelList.size() == 0 || modelList.size() != model->GetWorld()->Models().size()) {
+        modelList = model->GetWorld()->Models();
     }
 
-    math::Pose nestPose = model->GetWorldPose();
-    float x_min = nestPose.pos.x - (collectionZoneSquareSize / 2.0);
-    float x_max = nestPose.pos.x + (collectionZoneSquareSize / 2.0);
-    float y_min = nestPose.pos.y - (collectionZoneSquareSize / 2.0);
-    float y_max = nestPose.pos.y + (collectionZoneSquareSize / 2.0);
+    ignition::math::Pose3d nestPose = model->WorldPose();
+    float x_min = nestPose.Pos().X() - (collectionZoneSquareSize / 2.0);
+    float x_max = nestPose.Pos().X() + (collectionZoneSquareSize / 2.0);
+    float y_min = nestPose.Pos().Y() - (collectionZoneSquareSize / 2.0);
+    float y_max = nestPose.Pos().Y() + (collectionZoneSquareSize / 2.0);
 
     score = 0;
 
     for(unsigned int i = 0; i < modelList.size(); i++) {
         if (modelList[i]->GetName().substr(0,2).compare("at") == 0) {
-            if(modelList[i]->GetWorldPose().pos.x <= x_max &&
-               modelList[i]->GetWorldPose().pos.x >= x_min &&
-               modelList[i]->GetWorldPose().pos.y <= y_max &&
-               modelList[i]->GetWorldPose().pos.y >= y_min) {
+            if(modelList[i]->WorldPose().Pos().X() <= x_max &&
+               modelList[i]->WorldPose().Pos().X() >= x_min &&
+               modelList[i]->WorldPose().Pos().Y() <= y_max &&
+               modelList[i]->WorldPose().Pos().Y() >= y_min) {
                 score++;
             }
         }
