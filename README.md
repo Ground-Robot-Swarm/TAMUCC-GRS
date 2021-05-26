@@ -1,5 +1,5 @@
 # SwarmBaseCode-ROS
-
+# Modified by Alan Garduno from Texas A&M University - Corpus Christi
 This repository is a ROS (Robot Operating System) controller framework for the Swarmie robots used in the [NASA Swarmathon](http://www.nasaswarmathon.com), a national swarm robotics competition. 
 
 This repository contains:
@@ -22,21 +22,22 @@ Be: sure you are using the latest drivers for your video card using the "additio
 
 ### Quick Start Installation Guide
 
-SwarmBaseCode-ROS is designed and tested exclusively on the 64 bit version of Ubuntu 16.04 LTS (Xenial Xerus) and ROS Kinetic Kame. Other systems are untested and are therefore not supported at this time.
+The SwarmBaseCode-ROS was designed and tested exclusively on the 64 bit version of Ubuntu 16.04 LTS (Xenial Xerus) and ROS Kinetic Kame. Other systems are untested and are therefore not supported at this time.
 
-##### 1. Install ROS Kinetic Kame
+This repository was made to be compatible with the 64 bit version of Ubuntu 20.04 LTS (Focal Fossa) and ROS Noetic Ninjemy. 
 
-Detailed instructions for installing ROS Kinetic Kame under Ubuntu 16.04 [here](http://wiki.ros.org/kinetic/Installation/Ubuntu) or follow the summarized instructions below:
 
-```
+##### 1. Install ROS Noetic Ninjemy
+Detailed instructions for installing ROS Noetic Ninjemy under Ubuntu 20.04 [here](http://wiki.ros.org/noetic/Installation/Ubuntu) or follow the summarized instructions below:
+
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-
-sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
 sudo apt update
-sudo apt install ros-kinetic-desktop-full
-sudo rosdep init
+sudo apt install ros-noetic-desktop-full
+sudo rosdep init #if no command found run : sudo apt install python3-rosdep
 rosdep update      # Note this is not run with sudo
+```
 ```
 
 Note: if you accidentally ran ```sudo rosdep update``` you can repair the permissions ```sudo rosdep fix-permissions```.
@@ -54,35 +55,42 @@ Most systems will already have usb development support installed, but just in ca
 We use the [catkin_tools](https://catkin-tools.readthedocs.io/) package to build the SwarmBaseCode-ROS code base:
 
 ```
-sudo apt install python-rosinstall python-catkin-tools
+sudo apt install python3-rosinstall python3-catkin-tools
 ```
 
 Our simulated and physical Swarmies use existing ROS plugins, external to this repo, to facilitate non-linear state estimation through sensor fusion and frame transforms. These plugins are contained in the [robot_localization](http://wiki.ros.org/robot_localization) package, which should be installed using the apt-get package management tool:
 
 ```
-sudo apt install ros-kinetic-robot-localization
+sudo apt install ros-noetic-robot-localization
 ```
-The ROS USB camera package:
+The ROS USB camera package ( this repository uses the ros drivers for usb cameras contained in the [usb_cam](https://github.com/ros-drivers/usb_cam) package but you can choose to install the built-in ros drivers with the follow command) :
 ```
-sudo apt install ros-kinetic-usb-cam
+sudo apt install ros-noetic-usb-cam
 ```
 If you intend to use the rosbridge tools to run robots independently of the laptop you will need to install rosbridge:
 ```
-sudo apt install ros-kinetic-rosbridge-server
+sudo apt install ros-noetic-rosbridge-server
 ```
-
+Catkin requires additional python3 packages  as needed in osrf-pycommon:
+```
+sudo apt install python3-osrf-pycommon
+```
+Behaviors package uses random numbers generator so you will need to install the ros noetic random numbers generator:
+```
+sudo apt install ros-noetic-random-numbers
+```
 ##### 3. Install additional Gazebo plugins
 
 Our simulated Swarmies use existing Gazebo plugins, external to this repo, to replicate sonar, IMU, and GPS sensors. These plugins are contained in the [hector_gazebo_plugins](http://wiki.ros.org/hector_gazebo_plugins) package, which should be installed using the apt-get package management tool:
 
 ```
-sudo apt install ros-kinetic-hector-gazebo-plugins
+sudo apt install ros-noetic-hector-gazebo-plugins
 ```
 
 The Swarmies can receive commands from the thumb sticks on a Microsoft Xbox 360 controller. The ROS [joystick_drivers](http://wiki.ros.org/joystick_drivers) package, which contains a generic Linux joystick driver compatible with this controller, should also be installed using the apt tool:
 
 ```
- sudo apt install ros-kinetic-joystick-drivers
+ sudo apt install ros-noetic-joystick-drivers
 ```
 
 Joystick commands can also be simulated using the direction keys (Up=I, Down=K, Left=J, Right=L) on the keyboard. The Rover GUI window must have focus for keyboard control to work.
@@ -110,9 +118,9 @@ If you just want a clean copy of the base code then:
 1b. Clone this GitHub repository to your home directory (~), renaming the repo so ROS and catkin can properly identify it (you can name the target directory whatever you like):
 
   ```
-  cd ~
-  git clone https://github.com/BCLab-UNM/SwarmBaseCode-ROS.git SwarmBaseCode-ROS
-  cd SwarmBaseCode-ROS
+  cd YourRepositoryName
+  git remote add TAMUCC-GRS https://github.com/Ground-Robot-Swarm/TAMUCC-GRS
+  git pull TAMUCC-GRS
   ```
 
 
@@ -127,9 +135,9 @@ If you just want a clean copy of the base code then:
  
   Make sure bash is aware of the location of the ROS environment:
   ```
-  if ! grep -q "source /opt/ros/kinetic/setup.bash" ~/.bashrc
+  if ! grep -q "source /opt/ros/noetic/setup.bash" ~/.bashrc
   then 
-    echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+    echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
   fi
   source ~/.bashrc
   ```
@@ -140,12 +148,12 @@ If you just want a clean copy of the base code then:
   catkin build
   ```
     
-##### 6. Run the SwarmBaseCode-ROS simulation:
+##### 6. Run the TAMUCC-GRS simulation:
 
-1. Change the permissions on the simulation run script to make it exectuatable (assuming you use the target directory name SwarmBaseCode-ROS):
+1. Change the permissions on the simulation run script to make it exectuatable (assuming you use the target directory name TAMUCC-GRS):
   
   ```
-  cd ~/SwarmBaseCode-ROS
+  cd ~/TAMUCC-GRS
   chmod +x ./run.sh
   ```
   
